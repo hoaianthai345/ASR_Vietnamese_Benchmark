@@ -1,0 +1,5 @@
+name: "hf_whisper"
+hf_id: "openai/whisper-small"
+language: "vi"
+task: "transcribe"
+batch_size: 4

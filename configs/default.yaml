@@ -1,0 +1,24 @@
+seed: 42
+device: "cuda"   # "cpu" if GPU is not available
+dtype: "float16" # "float32" if CPU
+
+dataset:
+  name: "vivos"
+  manifest_path: "data/manifests/vivos_test.jsonl"
+
+model:
+  name: "hf_whisper"
+  hf_id: "openai/whisper-small"
+  language: "vi"
+  task: "transcribe"
+  batch_size: 4
+
+streaming:
+  enabled: true
+  chunk_ms: 320
+  overlap_ms: 80
+  lookahead_ms: 0
+
+output:
+  run_dir: "runs/exp01"
+  save_hyps: true

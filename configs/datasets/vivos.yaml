@@ -1,0 +1,3 @@
+name: "vivos"
+manifest_path: "data/manifests/vivos_test.jsonl"
+sample_rate: 16000
