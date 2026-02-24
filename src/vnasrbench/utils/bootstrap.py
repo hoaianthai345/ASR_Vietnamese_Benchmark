@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Sequence, Tuple
+from typing import Callable, List, Sequence, Tuple
 import numpy as np
 
 from vnasrbench.eval.wer import wer
@@ -19,18 +19,22 @@ def bootstrap_wer_ci(
     n_samples: int = 2000,
     alpha: float = 0.05,
     seed: int = 42,
+    score_fn: Callable[[Sequence[str], Sequence[str]], float] | None = None,
 ) -> BootstrapCI:
     rng = np.random.default_rng(seed)
     n = len(pairs)
     if n == 0:
         raise ValueError("No samples to bootstrap")
 
+    if score_fn is None:
+        score_fn = lambda r, h: wer(r, h).wer
+
     wers: List[float] = []
     for _ in range(n_samples):
         idx = rng.integers(0, n, size=n)
         refs = [pairs[i][0] for i in idx]
         hyps = [pairs[i][1] for i in idx]
-        wers.append(wer(refs, hyps).wer)
+        wers.append(float(score_fn(refs, hyps)))
 
     arr = np.array(wers, dtype=np.float64)
     mean = float(arr.mean())

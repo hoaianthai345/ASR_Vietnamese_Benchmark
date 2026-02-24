@@ -1,0 +1,5 @@
+name: "hf_whisper"
+hf_id: "openai/whisper-large-v3"
+language: "vi"
+task: "transcribe"
+batch_size: 1

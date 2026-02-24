@@ -1,0 +1,8 @@
+name: "vlsp2020"
+source: "hf"
+hf_id: "doof-ferb/vlsp2020_vinai_100h"
+hf_split: "train"
+text_key: "transcription"
+streaming: true
+sample_rate: 16000
+id_list_path: "" # set to data/splits/vlsp2020_fixed_test_ids.txt for held-out eval

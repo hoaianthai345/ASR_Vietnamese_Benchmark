@@ -1,0 +1,24 @@
+.git
+.gitignore
+.github
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.env
+.DS_Store
+
+# Build artifacts
+dist/
+build/
+
+# Data and runs (kept on host via volume mount)
+data/
+runs/
+
+# Local tooling
+.vscode/
+.idea/

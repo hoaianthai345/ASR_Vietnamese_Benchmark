@@ -1,0 +1,3 @@
+name: "hf_ctc"
+hf_id: "nguyenvulebinh/wav2vec2-base-vietnamese-250h"
+batch_size: 4

@@ -1,10 +1,18 @@
 seed: 42
-device: "cuda"   # "cpu" if GPU is not available
-dtype: "float16" # "float32" if CPU
+device: "cpu"   # "cpu" if GPU is not available
+dtype: "float32" # "float32" if CPU
+bootstrap_samples: 2000
 
 dataset:
-  name: "vivos"
-  manifest_path: "data/manifests/vivos_test.jsonl"
+  name: "speech_massive_vie"
+  source: "hf"
+  hf_id: "doof-ferb/Speech-MASSIVE_vie"
+  hf_split: "train"
+  text_key: "utt"
+  id_key: "id"
+  streaming: true
+  limit: 20
+  sample_rate: 16000
 
 model:
   name: "hf_whisper"
@@ -18,7 +26,9 @@ streaming:
   chunk_ms: 320
   overlap_ms: 80
   lookahead_ms: 0
+  stitch_tail_window_tokens: 50
 
 output:
   run_dir: "runs/exp01"
   save_hyps: true
+  save_streaming_partials: false

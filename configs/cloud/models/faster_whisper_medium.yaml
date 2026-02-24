@@ -1,0 +1,8 @@
+name: "faster_whisper"
+hf_id: "Systran/faster-whisper-medium"
+language: "vi"
+task: "transcribe"
+beam_size: 1
+temperature: 0.0
+vad_filter: false
+batch_size: 1

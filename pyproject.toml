@@ -20,9 +20,12 @@ tqdm = "^4.66.5"
 rich = "^13.8.1"
 pandas = "^2.2.2"
 matplotlib = "^3.9.2"
+datasets = {version = ">=3.0,<4.0", extras = ["audio"]}
+faster-whisper = {version = "^1.2.1", optional = true}
 
 [tool.poetry.extras]
 gpu = ["torch", "torchaudio"]
+faster = ["faster-whisper"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"

@@ -1,0 +1,5 @@
+name: "hf_whisper"
+hf_id: "vinai/PhoWhisper-large"
+language: "vi"
+task: "transcribe"
+batch_size: 1

@@ -44,6 +44,5 @@ def write_jsonl(path: str | Path, items: Iterable[Utterance]) -> None:
                     },
                     ensure_ascii=False,
                 )
-                + "
-"
+                + "\n"
             )

@@ -1,0 +1,8 @@
+name: "speech_massive_vie"
+source: "hf"
+hf_id: "doof-ferb/Speech-MASSIVE_vie"
+hf_split: "test"
+text_key: "utt"
+id_key: "id"
+streaming: true
+sample_rate: 16000
