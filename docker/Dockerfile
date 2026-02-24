@@ -25,11 +25,11 @@ WORKDIR /workspace
 COPY p* /workspace/
 
 RUN poetry config virtualenvs.create false \
-    && poetry install --with dev -E gpu --no-root
+    && poetry install --with dev -E gpu -E faster -E chunkformer --no-root
 
 COPY . /workspace/
 
-RUN poetry install --with dev -E gpu --only-root
+RUN poetry install --with dev -E gpu -E faster -E chunkformer --only-root
 
 RUN useradd -m -u 1000 app && chown -R app:app /workspace
 USER app

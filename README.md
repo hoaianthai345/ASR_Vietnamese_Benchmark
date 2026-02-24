@@ -131,11 +131,14 @@ Note: HF streaming runs do not require local `audio_path`; use `dataset.source: 
 
 Configs for multi-dataset / multi-model runs live under `configs/cloud/` and a ready-to-run matrix is in `configs/cloud/matrix.yaml`.
 
-Install deps (GPU + optional faster-whisper):
+Install deps (GPU + matrix models):
 
 ```bash
-poetry install --with dev -E gpu -E faster
+poetry install --with dev -E gpu -E faster -E chunkformer
 ```
+
+Note:
+- `chunkformer` requires Python `>=3.11`. If your server uses Python 3.10, create a Python 3.11 Poetry env before running the full matrix.
 
 Dry-run to see planned runs:
 
@@ -158,6 +161,7 @@ poetry run python scripts/run_cloud_matrix.py --matrix configs/cloud/matrix.yaml
 Notes:
 - VIVOS on HF uses a dataset script. This repo pins `datasets<4.0` to keep it working.
 - The VIVOS dataset card indicates the transcript field is `sentence`.
+- For HF datasets with custom loading scripts (e.g. VIVOS), set `dataset.trust_remote_code: true` in the dataset config.
 
 ## Reproducibility checklist
 

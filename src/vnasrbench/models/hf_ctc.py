@@ -24,13 +24,13 @@ class HFCTCModel(ASRModel):
     def __init__(self, cfg: HFCTCConfig) -> None:
         self.cfg = cfg
         self.processor = AutoProcessor.from_pretrained(cfg.hf_id)
-        torch_dtype = torch.float16 if cfg.dtype == "float16" else torch.float32
+        self.torch_dtype = torch.float16 if cfg.dtype == "float16" else torch.float32
         self.model = AutoModelForCTC.from_pretrained(
             cfg.hf_id,
-            dtype=torch_dtype,
+            torch_dtype=self.torch_dtype,
             revision=cfg.hf_revision,
         )
-        self.model.to(cfg.device, dtype=torch_dtype)
+        self.model.to(cfg.device, dtype=self.torch_dtype)
         self.model.eval()
 
     @torch.inference_mode()
@@ -43,7 +43,7 @@ class HFCTCModel(ASRModel):
             padding=True,
             return_attention_mask=True,
         )
-        input_values = inputs.input_values.to(self.cfg.device)
+        input_values = inputs.input_values.to(self.cfg.device, dtype=self.torch_dtype)
         attention_mask = getattr(inputs, "attention_mask", None)
         if attention_mask is not None:
             attention_mask = attention_mask.to(self.cfg.device)

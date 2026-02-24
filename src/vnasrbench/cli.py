@@ -10,6 +10,7 @@ import yaml
 
 from vnasrbench.data.hf import HFDatasetConfig, compute_id_list_sha256
 from vnasrbench.eval.runner import RunConfig, StreamingSimConfig, run_benchmark, run_benchmark_hf
+from vnasrbench.models.chunkformer import ChunkFormerConfig, ChunkFormerModel
 from vnasrbench.models.faster_whisper import FasterWhisperConfig, FasterWhisperModel
 from vnasrbench.models.hf_ctc import HFCTCConfig, HFCTCModel
 from vnasrbench.models.hf_whisper import HFWhisperConfig, HFWhisperModel
@@ -128,6 +129,12 @@ def _collect_env_info() -> Dict[str, Any]:
         info["ctranslate2_version"] = ctranslate2.__version__
     except Exception:
         pass
+    try:
+        import chunkformer  # type: ignore
+
+        info["chunkformer_version"] = chunkformer.__version__
+    except Exception:
+        pass
     return info
 
 
@@ -154,6 +161,11 @@ def run_from_config(path: str) -> Dict[str, Any]:
 
     # Model
     mname = cfg["model"]["name"]
+    model_cfg = cfg.get("model", {}) or {}
+    default_device = cfg.get("device", "cuda")
+    default_dtype = cfg.get("dtype", "float16")
+    model_device = model_cfg.get("device", default_device)
+    model_dtype = model_cfg.get("dtype", default_dtype)
     model_meta: Dict[str, Any] = {"model_name": mname}
     if mname == "hf_whisper":
         decode_cfg = cfg.get("decode", {}) or {}
@@ -163,8 +175,8 @@ def run_from_config(path: str) -> Dict[str, Any]:
             hf_revision=cfg["model"].get("hf_revision"),
             language=cfg["model"].get("language", "vi"),
             task=cfg["model"].get("task", "transcribe"),
-            device=cfg.get("device", "cuda"),
-            dtype=cfg.get("dtype", "float16"),
+            device=model_device,
+            dtype=model_dtype,
             batch_size=int(cfg["model"].get("batch_size", 4)),
             decode_kwargs=decode_cfg,
         )
@@ -181,8 +193,8 @@ def run_from_config(path: str) -> Dict[str, Any]:
         mcfg = HFCTCConfig(
             hf_id=cfg["model"]["hf_id"],
             hf_revision=cfg["model"].get("hf_revision"),
-            device=cfg.get("device", "cuda"),
-            dtype=cfg.get("dtype", "float16"),
+            device=model_device,
+            dtype=model_dtype,
             batch_size=int(cfg["model"].get("batch_size", 4)),
         )
         model_meta.update(
@@ -197,8 +209,8 @@ def run_from_config(path: str) -> Dict[str, Any]:
         mcfg = FasterWhisperConfig(
             hf_id=cfg["model"]["hf_id"],
             hf_revision=cfg["model"].get("hf_revision"),
-            device=cfg.get("device", "cpu"),
-            dtype=cfg.get("dtype", "float32"),
+            device=model_cfg.get("device", cfg.get("device", "cpu")),
+            dtype=model_cfg.get("dtype", cfg.get("dtype", "float32")),
             compute_type=cfg["model"].get("compute_type"),
             language=cfg["model"].get("language", "vi"),
             task=cfg["model"].get("task", "transcribe"),
@@ -220,9 +232,34 @@ def run_from_config(path: str) -> Dict[str, Any]:
             }
         )
         model = FasterWhisperModel(mcfg)
+    elif mname == "chunkformer":
+        mcfg = ChunkFormerConfig(
+            hf_id=cfg["model"]["hf_id"],
+            hf_revision=cfg["model"].get("hf_revision"),
+            device=model_device,
+            chunk_size=int(cfg["model"].get("chunk_size", 64)),
+            left_context_size=int(cfg["model"].get("left_context_size", 128)),
+            right_context_size=int(cfg["model"].get("right_context_size", 128)),
+            total_batch_duration=int(cfg["model"].get("total_batch_duration", 1800)),
+        )
+        model_meta.update(
+            {
+                "model_hf_id": mcfg.hf_id,
+                "model_hf_revision": mcfg.hf_revision,
+                "model_hf_resolved_sha": _resolve_hf_revision(mcfg.hf_id, "model", mcfg.hf_revision),
+                "decode_kwargs": {
+                    "chunk_size": mcfg.chunk_size,
+                    "left_context_size": mcfg.left_context_size,
+                    "right_context_size": mcfg.right_context_size,
+                    "total_batch_duration": mcfg.total_batch_duration,
+                },
+            }
+        )
+        model = ChunkFormerModel(mcfg)
     else:
         raise ValueError(
-            f"Unsupported model.name: {mname}. Supported: hf_whisper, hf_ctc, faster_whisper"
+            "Unsupported model.name: "
+            f"{mname}. Supported: hf_whisper, hf_ctc, faster_whisper, chunkformer"
         )
 
     # Run
@@ -268,6 +305,7 @@ def run_from_config(path: str) -> Dict[str, Any]:
                 "dataset_id_list_sha256": compute_id_list_sha256(id_list_path),
                 "dataset_limit": dcfg.get("limit"),
                 "dataset_streaming": bool(dcfg.get("streaming", True)),
+                "dataset_trust_remote_code": bool(dcfg.get("trust_remote_code", False)),
             }
         )
 
@@ -291,6 +329,7 @@ def run_from_config(path: str) -> Dict[str, Any]:
             limit=dcfg.get("limit"),
             id_list_path=dcfg.get("id_list_path"),
             revision=dcfg.get("hf_revision"),
+            trust_remote_code=bool(dcfg.get("trust_remote_code", False)),
         )
         metrics = run_benchmark_hf(model, rcfg, hf_cfg)
     else:

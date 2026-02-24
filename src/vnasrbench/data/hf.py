@@ -18,6 +18,7 @@ class HFDatasetConfig:
     limit: Optional[int] = None
     id_list_path: Optional[str] = None
     revision: Optional[str] = None
+    trust_remote_code: bool = False
 
     def load_id_set(self) -> Optional[Set[str]]:
         if not self.id_list_path:
@@ -60,6 +61,7 @@ def iter_hf_dataset(cfg: HFDatasetConfig) -> Iterator[Tuple[str, str, np.ndarray
         split=cfg.split,
         streaming=cfg.streaming,
         revision=cfg.revision,
+        trust_remote_code=cfg.trust_remote_code,
     )
     id_set = cfg.load_id_set()
 

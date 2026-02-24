@@ -22,10 +22,12 @@ pandas = "^2.2.2"
 matplotlib = "^3.9.2"
 datasets = {version = ">=3.0,<4.0", extras = ["audio"]}
 faster-whisper = {version = "^1.2.1", optional = true}
+chunkformer = {version = "^1.2.2", optional = true, python = ">=3.11,<3.12"}
 
 [tool.poetry.extras]
 gpu = ["torch", "torchaudio"]
 faster = ["faster-whisper"]
+chunkformer = ["chunkformer"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
