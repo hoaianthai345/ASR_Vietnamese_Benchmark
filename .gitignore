@@ -18,6 +18,17 @@ build/
 # Data and runs
 /data/
 /runs/
+.cache/
+.hf_cache/
+
+# Hugging Face / model artifacts
+**/.cache/huggingface/
+**/huggingface/hub/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
 
 # IDE
 .vscode/

@@ -38,6 +38,17 @@ poetry run vnasrbench --config configs/default.yaml
 make aggregate
 ```
 
+## Avoid Large Files In Git (HF Cache)
+
+Do not place Hugging Face cache inside the repository. Keep cache under `$HOME`:
+
+```bash
+export HF_HOME="$HOME/.cache/huggingface"
+export TRANSFORMERS_CACHE="$HF_HOME/hub"
+```
+
+Models and datasets are downloaded directly from Hugging Face by code (`from_pretrained` / `snapshot_download`) at runtime, so only configs/code should be committed.
+
 ## Output
 
 - `runs/exp01/metrics.json`

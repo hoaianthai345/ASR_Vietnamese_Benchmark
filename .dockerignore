@@ -18,6 +18,15 @@ build/
 # Data and runs (kept on host via volume mount)
 data/
 runs/
+.cache/
+.hf_cache/
+**/.cache/huggingface/
+**/huggingface/hub/
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.onnx
 
 # Local tooling
 .vscode/
