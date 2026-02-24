@@ -41,6 +41,25 @@ class ChunkFormerModel(ASRModel):
         self.model = _ChunkFormer.from_pretrained(cfg.hf_id, **kwargs).to(cfg.device)
         self.model.eval()
         self._tmpdir = tempfile.TemporaryDirectory(prefix="vnasrbench_chunkformer_")
+        self._min_window_ms = 25.0
+        try:
+            fbank_conf = getattr(self.model.config, "fbank_conf", None)
+            if isinstance(fbank_conf, dict):
+                self._min_window_ms = float(fbank_conf.get("frame_length", self._min_window_ms))
+        except Exception:
+            pass
+
+    def _prepare_wav(self, wav: np.ndarray, sample_rate: int) -> np.ndarray:
+        out = np.asarray(wav, dtype=np.float32)
+        if out.ndim > 1:
+            out = out.mean(axis=-1)
+        window_samples = int(round(sample_rate * (self._min_window_ms / 1000.0)))
+        # pydub/ffmpeg can shave a few samples on very short waveforms,
+        # so keep a safety margin above the theoretical minimum window size.
+        min_samples = max(2, window_samples + max(32, window_samples // 4))
+        if out.shape[0] < min_samples:
+            out = np.pad(out, (0, min_samples - out.shape[0]), mode="constant")
+        return out
 
     def _decode_to_text(self, x: object) -> str:
         if isinstance(x, str):
@@ -59,6 +78,7 @@ class ChunkFormerModel(ASRModel):
         temp_paths: List[Path] = []
         try:
             for i, wav in enumerate(wavs):
+                wav = self._prepare_wav(wav, sample_rate)
                 wav_path = Path(self._tmpdir.name) / f"chunkformer_{os.getpid()}_{i}.wav"
                 sf.write(str(wav_path), wav, sample_rate)
                 temp_paths.append(wav_path)

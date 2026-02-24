@@ -1,0 +1,8 @@
+name: "viet_youtube_asr_v2_300"
+source: "hf"
+hf_id: "linhtran92/viet_youtube_asr_corpus_v2"
+hf_split: "test"
+text_key: "transcription"
+streaming: true
+sample_rate: 16000
+limit: 300

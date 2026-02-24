@@ -1,0 +1,9 @@
+name: "vlsp2020_300"
+source: "hf"
+hf_id: "doof-ferb/vlsp2020_vinai_100h"
+hf_split: "train"
+text_key: "transcription"
+streaming: true
+sample_rate: 16000
+id_list_path: "data/splits/vlsp2020_train_first300_ids.txt"
+limit: 300

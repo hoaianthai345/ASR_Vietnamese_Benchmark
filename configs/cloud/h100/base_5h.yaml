@@ -1,0 +1,22 @@
+seed: 42
+device: "cuda"
+dtype: "float16"
+bootstrap_samples: 200
+
+decode:
+  max_new_tokens: 96
+  num_beams: 1
+  temperature: 0.0
+  do_sample: false
+
+streaming:
+  enabled: true
+  chunk_ms: 4000
+  overlap_ms: 200
+  lookahead_ms: 0
+  stitch_tail_window_tokens: 100
+
+output:
+  run_dir: "runs/exp01"
+  save_hyps: true
+  save_streaming_partials: false

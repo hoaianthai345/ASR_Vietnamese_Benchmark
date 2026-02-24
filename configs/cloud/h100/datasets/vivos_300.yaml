@@ -1,0 +1,9 @@
+name: "vivos_300"
+source: "hf"
+hf_id: "AILAB-VNUHCM/vivos"
+hf_split: "test"
+text_key: "sentence"
+streaming: true
+sample_rate: 16000
+trust_remote_code: true
+limit: 300

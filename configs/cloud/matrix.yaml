@@ -11,7 +11,6 @@ models:
   wav2vec2_base_vn_250h: "configs/cloud/models/wav2vec2_base_vn_250h.yaml"
   pho_whisper_large: "configs/cloud/models/pho_whisper_large.yaml"
   whisper_large_v3: "configs/cloud/models/whisper_large_v3.yaml"
-  faster_whisper_medium: "configs/cloud/models/faster_whisper_medium.yaml"
 
 runs:
   - datasets: [vivos, vlsp2020, viet_youtube_asr_v2, speech_massive_vie]
@@ -19,5 +18,5 @@ runs:
     streaming: true
 
   - datasets: [vivos, vlsp2020, viet_youtube_asr_v2, speech_massive_vie]
-    models: [pho_whisper_large, whisper_large_v3, faster_whisper_medium]
+    models: [pho_whisper_large, whisper_large_v3]
     streaming: false

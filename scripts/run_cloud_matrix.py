@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import time
 from copy import deepcopy
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -48,6 +49,14 @@ def main() -> None:
     ap.add_argument("--matrix", default="configs/cloud/matrix.yaml", help="Matrix YAML")
     ap.add_argument("--filter", default="", help="Substring filter on dataset/model/run_id")
     ap.add_argument("--dry-run", action="store_true", help="Print planned runs only")
+    ap.add_argument("--resume", action="store_true", help="Skip runs that already have metrics.json")
+    ap.add_argument(
+        "--stop-after-hours",
+        type=float,
+        default=0.0,
+        help="Stop launching new runs after N hours elapsed (0 means no limit)",
+    )
+    ap.add_argument("--continue-on-error", action="store_true", help="Continue if a run fails")
     args = ap.parse_args()
 
     repo_root = Path(__file__).resolve().parents[1]
@@ -58,8 +67,18 @@ def main() -> None:
     datasets = matrix["datasets"]
     models = matrix["models"]
     runs = list(_expand_runs(matrix["runs"]))
+    t_start = time.time()
 
     for r in runs:
+        if args.stop_after_hours > 0:
+            elapsed_h = (time.time() - t_start) / 3600.0
+            if elapsed_h >= args.stop_after_hours:
+                print(
+                    f"Stop budget reached: elapsed={elapsed_h:.2f}h >= {args.stop_after_hours:.2f}h. "
+                    "No more runs will be launched."
+                )
+                break
+
         dname = r["dataset"]
         mname = r["model"]
         mode = "stream" if bool(r.get("streaming", False)) else "offline"
@@ -82,6 +101,11 @@ def main() -> None:
 
         cfg.setdefault("output", {})
         run_dir = repo_root / "runs" / run_id
+        metrics_path = run_dir / "metrics.json"
+        if args.resume and metrics_path.exists():
+            print("SKIP (resume):", run_id, "->", metrics_path)
+            continue
+
         cfg["output"]["run_dir"] = str(run_dir)
 
         config_path = run_dir / "config.yaml"
@@ -93,8 +117,13 @@ def main() -> None:
             continue
 
         print("Running:", run_id)
-        metrics = run_from_config(str(config_path))
-        print("Done:", run_id, metrics)
+        try:
+            metrics = run_from_config(str(config_path))
+            print("Done:", run_id, metrics)
+        except Exception as e:
+            print("FAILED:", run_id, "-", repr(e))
+            if not args.continue_on_error:
+                raise
 
 
 if __name__ == "__main__":
