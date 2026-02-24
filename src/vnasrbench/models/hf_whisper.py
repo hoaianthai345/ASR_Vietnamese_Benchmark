@@ -29,7 +29,7 @@ class HFWhisperModel(ASRModel):
         self.torch_dtype = torch.float16 if cfg.dtype == "float16" else torch.float32
         self.model = AutoModelForSpeechSeq2Seq.from_pretrained(
             cfg.hf_id,
-            torch_dtype=self.torch_dtype,
+            dtype=self.torch_dtype,
             revision=cfg.hf_revision,
         )
         self.model.to(cfg.device, dtype=self.torch_dtype)
