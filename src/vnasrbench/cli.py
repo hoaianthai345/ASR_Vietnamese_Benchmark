@@ -276,6 +276,8 @@ def run_from_config(path: str) -> Dict[str, Any]:
             warnings.append("hf_split=train without id_list_path; evaluation may not be held-out.")
         if warnings:
             dataset_meta["config_warnings"] = warnings
+            for w in warnings:
+                print(f"[WARN] {w}")
 
         env_info = _collect_env_info()
         _snapshot_run(path, cfg, run_dir, extra_info={**env_info, **dataset_meta, **model_meta})

@@ -35,3 +35,29 @@ dataset:
 ```
 
 The SHA256 is logged in `runs/<exp_id>/run_info.json` as `dataset_id_list_sha256`.
+
+## Quick Start for `configs/cloud/datasets/vlsp2020.yaml`
+
+`vlsp2020` is configured with `hf_split: "train"` by default, so you should provide a fixed `id_list_path` for held-out evaluation.
+
+Example:
+
+```bash
+mkdir -p data/splits
+
+# create a fixed held-out list (replace with your own curated IDs)
+cat > data/splits/vlsp2020_fixed_test_ids.txt << 'EOF'
+train_00000001
+train_00000002
+EOF
+
+shasum -a 256 data/splits/vlsp2020_fixed_test_ids.txt
+```
+
+Then set:
+
+```yaml
+dataset:
+  hf_split: "train"
+  id_list_path: "data/splits/vlsp2020_fixed_test_ids.txt"
+```
