@@ -1,0 +1,30 @@
+base_config: "configs/cloud/h100/base_5h.yaml"
+
+datasets:
+  vivos_300: "configs/cloud/h100/datasets/vivos_300.yaml"
+  vlsp2020_300: "configs/cloud/h100/datasets/vlsp2020_300.yaml"
+  viet_youtube_asr_v2_300: "configs/cloud/h100/datasets/viet_youtube_asr_v2_300.yaml"
+  speech_massive_vie_300: "configs/cloud/h100/datasets/speech_massive_vie_300.yaml"
+
+models:
+  chunkformer_ctc_large_vie: "configs/cloud/models/chunkformer_ctc_large_vie.yaml"
+  wav2vec2_base_vn_250h: "configs/cloud/models/wav2vec2_base_vn_250h.yaml"
+
+runs:
+  - profile: "lat1200"
+    datasets: [vivos_300, vlsp2020_300, viet_youtube_asr_v2_300, speech_massive_vie_300]
+    models: [chunkformer_ctc_large_vie, wav2vec2_base_vn_250h]
+    streaming: true
+    streaming_cfg:
+      chunk_ms: 1200
+      overlap_ms: 200
+      lookahead_ms: 0
+
+  - profile: "lat2400"
+    datasets: [vivos_300, vlsp2020_300, viet_youtube_asr_v2_300, speech_massive_vie_300]
+    models: [chunkformer_ctc_large_vie, wav2vec2_base_vn_250h]
+    streaming: true
+    streaming_cfg:
+      chunk_ms: 2400
+      overlap_ms: 200
+      lookahead_ms: 0

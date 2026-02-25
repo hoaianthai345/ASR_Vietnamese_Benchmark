@@ -187,6 +187,7 @@ Current v0.1 implements offline inference and pseudo-streaming simulation via LC
 Detailed structure and file-by-file explanation:
 
 - `docs/REPO_GUIDE.md`
+- `docs/VM_H100_FRONTIER_RUNBOOK.md` (SSH VM -> setup -> run frontier 2h -> merge results)
 
 ## Docker (GPU)
 

@@ -82,7 +82,11 @@ def main() -> None:
         dname = r["dataset"]
         mname = r["model"]
         mode = "stream" if bool(r.get("streaming", False)) else "offline"
-        run_id = f"{dname}__{mname}__{mode}"
+        profile = str(r.get("profile", "")).strip()
+        if profile:
+            run_id = f"{dname}__{mname}__{profile}__{mode}"
+        else:
+            run_id = f"{dname}__{mname}__{mode}"
 
         if args.filter:
             hay = f"{dname} {mname} {run_id}"
