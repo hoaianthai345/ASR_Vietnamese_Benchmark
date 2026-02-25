@@ -45,9 +45,9 @@ Thi Thuy Duong NGUYEN\inst{1}\orcidID{0009-0000-3548-2212}}
 
 \begin{abstract}
 Vietnamese ASR is increasingly deployed in production, where offline word error rate (WER) alone is insufficient for model selection under streaming latency and runtime budgets. 
-We present a reproducible streaming evaluation framework that standardizes chunking, right context (look-ahead), overlap handling, and metric computation, and reports WER and real-time factor (RTF) under a fixed deployment-oriented streaming setup across representative model families. 
+We present a reproducible streaming evaluation framework that standardizes chunking, right context (look-ahead), overlap handling, and metric computation, and reports WER and real-time factor (RTF) under multiple deployment-oriented latency profiles (1200/2400/4000\,ms) across representative model families. 
 We evaluate on VIVOS, VLSP2020, Viet YouTube ASR v2, and Speech-MASSIVE\_vie to produce a robustness scorecard under streaming stressors and distribution shifts. 
-We further introduce a Vietnamese-specific error taxonomy (numerals, punctuation, named entities, and Vietnamese--English code-switching) to translate benchmark outcomes into deployment guidance.
+We further provide a preliminary Vietnamese-specific error taxonomy (numerals, punctuation, named entities, and Vietnamese--English code-switching) to translate benchmark outcomes into deployment guidance.
 \keywords{Vietnamese ASR \and Streaming evaluation \and Latency \and Real-time factor \and Robustness}
 \end{abstract}
 
@@ -68,9 +68,9 @@ The problem is sharper for Vietnamese because evaluation data often differ from 
 We present a system-oriented benchmark for Vietnamese streaming ASR. Our contributions are:
 \begin{itemize}
   \item We define a reproducible streaming evaluation protocol (with a reference implementation) covering chunking, look-ahead, overlap handling, and metric computation.
-  \item We report WER, $\Delta$WER (streaming minus offline), and RTF under a fixed streaming configuration representative of practical deployment.
+  \item We report WER, $\Delta$WER (streaming minus offline), and RTF under three streaming latency profiles representative of practical deployment.
   \item We provide a robustness scorecard measuring degradation under streaming stressors and realistic distribution shifts.
-  \item We introduce a Vietnamese-specific error taxonomy and summarize practical implications for deployment.
+  \item We provide a preliminary Vietnamese-specific error taxonomy and summarize practical implications for deployment.
 \end{itemize}
 
 
@@ -121,7 +121,8 @@ VIVOS serves as a clean read-speech baseline, providing an upper-bound reference
 VLSP2020 represents a standardized Vietnamese benchmark and includes spontaneous speech, enabling evaluation under controlled domain shift \cite{vlsp2020asr}.
 The Vietnamese YouTube ASR Corpus v2 captures in-the-wild speech across diverse recording conditions and content domains \cite{ardila2020commonvoice},
 while Speech-MASSIVE (Vietnamese) consists of short, intent-driven utterances representative of assistant-style use cases with strict latency requirements \cite{lee2024speechmassive}.
-To balance computational feasibility and statistical credibility, fixed representative subsets are used, resulting in a total evaluation set of approximately 6–10 hours of audio.
+For all latency-sweep experiments, we use fixed 300-utterance subsets per dataset, yielding:
+1155.2\,s (VIVOS), 2808.4\,s (VLSP2020), 768.4\,s (Viet YouTube ASR v2), and 1156.8\,s (Speech-MASSIVE\_vie), i.e., 5888.8\,s in total ($\sim$1.64\,h).
 All audio is resampled to a consistent sampling rate and converted to mono, and reference transcripts are normalized using a unified text normalization procedure to ensure fair comparison across models and settings.
 
 The evaluation focuses on representative ASR model families with publicly available checkpoints.
@@ -132,9 +133,10 @@ Deployment-oriented variants based on faster-whisper are left as future work due
 No model is retrained or fine-tuned; all results are obtained through inference-only evaluation to isolate the effects of streaming constraints and evaluation protocol choices.
 
 Streaming inference is simulated by segmenting input audio into fixed-size chunks and restricting right context using a configurable look-ahead window.
-A single deployment-oriented streaming configuration is used in this study: chunk size 4000\,ms, overlap 200\,ms, and look-ahead 0\,ms.
+For streaming-capable models (ChunkFormer and wav2vec2), we evaluate three deployment-oriented profiles:
+1200\,ms, 2400\,ms, and 4000\,ms chunk size, each with 200\,ms overlap and 0\,ms look-ahead.
 Chunking and overlap handling are standardized across streaming-capable models, and offline decoding with full context is performed as a reference.
-Latency proxy is therefore fixed at 4000\,ms for all streaming runs; this setup enables controlled model comparison but does not support latency-sweep analysis.
+Latency proxy is defined as chunk size plus look-ahead (thus 1200/2400/4000\,ms in our sweep).
 
 Word Error Rate (WER) is reported as the primary accuracy metric, together with 95\% bootstrap confidence intervals for statistical reliability.
 Runtime efficiency is quantified using real-time factor (RTF), defined as the ratio of inference time to audio duration, and throughput is reported where applicable.
@@ -212,80 +214,127 @@ Whisper-large-v3 (1.55B)          & 0.0903 [0.0186] & 11.1 & 1$\times$NVIDIA H10
 \end{table}
 
 
-Figure~\ref{fig:wer-latency} summarizes streaming WER under the fixed-latency setup
-(4000\,ms chunk, 200\,ms overlap, 0\,ms look-ahead).
-The figure is used for cross-model comparison at one deployment setting,
-not for latency-sweep optimization.
+Figure~\ref{fig:wer-latency} summarizes streaming WER under the latency-sweep setup
+(1200/2400/4000\,ms chunks, 200\,ms overlap, 0\,ms look-ahead).
+
+\subsection{Latency--Accuracy Frontier Analysis}
+
+Figure~\ref{fig:wer-latency} shows a consistent monotonic trend across datasets:
+moving from 1200\,ms to 4000\,ms reduces streaming WER for both streaming-capable models.
+Averaged over datasets, ChunkFormer improves from 34.8\% to 20.9\% WER
+($-13.9$ percentage points), while wav2vec2 improves from 43.5\% to 25.9\%
+($-17.6$ percentage points).
+This confirms that latency configuration is a first-order factor in deployment quality.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=\linewidth]{figures/fig_streaming_wer_bar.png}
-\caption{Streaming WER comparison under the fixed-latency setup (4000\,ms chunk, 200\,ms overlap, 0\,ms look-ahead).}
+\includegraphics[width=\linewidth]{figures/fig_frontier_wer_latency.png}
+\caption{Latency--accuracy frontier (streaming WER with 95\% CI) for ChunkFormer and wav2vec2 under 1200/2400/4000\,ms profiles.}
 \label{fig:wer-latency}
 \end{figure}
 
-Runtime efficiency is summarized in Table~\ref{tab:rtf}, while the remaining analysis
-focuses on robustness and streaming degradation across datasets.
+Figure~\ref{fig:delta-wer} reports $\Delta$WER (streaming minus offline) along the same latency sweep.
+Across all datasets and both models, $\Delta$WER decreases as chunk size increases, indicating more stable context integration at higher latency budgets.
+VLSP2020 remains the hardest condition at all latency points, with large residual degradation even at 4000\,ms.
+
+\subsection{VLSP2020 Failure Analysis}
+
+The VLSP2020 degradation is systematic rather than an isolated outlier.
+At 4000\,ms, both models remain above 50\% streaming WER (ChunkFormer 50.64\%, wav2vec2 52.74\%), despite low offline WER (3.83\% and 10.09\%, respectively).
+This gap is accompanied by strong instability signals:
+at 4000\,ms, VLSP2020 has the highest average chunks per utterance (2.97 versus 1.05--1.52 on other datasets) and the highest change rate ($\sim$80\% for both models).
+At 1200\,ms, average chunks per utterance increase to 9.87 and change rate rises to about 91--92\%.
+These results suggest boundary-sensitive failure under multi-chunk decoding, where frequent partial-hypothesis revision amplifies domain mismatch.
+This behavior should be interpreted as a deployment risk for long or highly variable utterances.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_frontier_delta_latency.png}
+\caption{Latency sweep for streaming degradation ($\Delta$WER in percentage points). Lower is better.}
+\label{fig:delta-wer}
+\end{figure}
+
+\subsection{Streaming Stability}
+
+We further analyze incremental-hypothesis stability using change rate and edit-overhead metrics.
+Figure~\ref{fig:stability} shows that stability improves markedly as latency increases:
+mean change rate drops from approximately 81\% (1200\,ms) to 31\% (4000\,ms),
+and mean edit overhead drops from approximately 1.55 to 0.44.
+VLSP2020 is consistently the least stable condition, with change rates around 0.88--0.92 at 1200/2400\,ms and still around 0.80 at 4000\,ms.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/fig_stability_change_rate_heatmap.png}
+\caption{Streaming stability heatmap (hypothesis change rate, \%) across datasets and latency profiles.}
+\label{fig:stability}
+\end{figure}
 
 Table~\ref{tab:robustness} reports accuracy degradation under distribution shifts,
 including spontaneous speech, in-the-wild recordings, and assistant-style utterances.
-For each condition, we report the relative increase in WER compared to the clean read-speech baseline.
-Streaming constraints consistently amplify robustness degradation,
-though the magnitude varies across model families.
+For each condition, we report both absolute and relative shifts against the clean read-speech baseline (VIVOS) at 4000\,ms.
+Reporting both metrics avoids over-emphasis from ratio-only views when the clean baseline is small.
+
+\subsection{Robustness with Absolute and Relative Shift}
+
+To make robustness comparison explicit, we define a model-wise robustness index at fixed latency:
+\[
+\mathrm{RI}(d,m)=\frac{\mathrm{WER}_{\text{stream}}(d,m)}{\mathrm{WER}_{\text{stream}}(\text{VIVOS},m)}.
+\]
+This is equivalent to \(1+\frac{\text{Relative Shift}}{100}\), and complements absolute shifts (percentage points).
 
 \begin{table}[H]
-\caption{Robustness scorecard reporting relative WER degradation (\%) under different conditions (relative to clean baseline; negative values indicate improvement).}\label{tab:robustness}%
+\caption{Robustness scorecard at 4000\,ms streaming profile. Absolute shift is in percentage points (pp) from VIVOS. Relative shift is \% change from VIVOS; negative values indicate improvement.}\label{tab:robustness}%
 \centering
 \resizebox{\linewidth}{!}{%
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{@{}llccc@{}}
 \toprule
-Model & Clean & Spontaneous & In-the-wild & Assistant-style \\
+Model & Dataset & WER (\%) & Absolute Shift (pp) & Relative Shift (\%) \\
 \midrule
-ChunkFormer-CTC-large (110M)      & 0.0 & +720.2 & -11.9 & +246.3 \\
-wav2vec2-base-vi (95M)            & 0.0 & +328.2 & -32.6 & +146.7 \\
-PhoWhisper-large (1.55B)          & 0.0 & +480.8 & +250.3 & +492.8 \\
-Whisper-large-v3 (1.55B)          & 0.0 & +162.6 & +282.3 & +136.0 \\
+\multirow{4}{*}{ChunkFormer-CTC-large}
+ & VIVOS               & 6.17  & 0.00   & 0.0 \\
+ & VLSP2020            & 50.64 & +44.46 & +720.2 \\
+ & Viet YouTube ASR v2 & 5.44  & -0.73  & -11.9 \\
+ & Speech-MASSIVE\_vie & 21.38 & +15.21 & +246.3 \\
+\midrule
+\multirow{4}{*}{wav2vec2-base-vi}
+ & VIVOS               & 12.32 & 0.00   & 0.0 \\
+ & VLSP2020            & 52.74 & +40.42 & +328.2 \\
+ & Viet YouTube ASR v2 & 8.31  & -4.01  & -32.6 \\
+ & Speech-MASSIVE\_vie & 30.38 & +18.07 & +146.7 \\
 \bottomrule
 \end{tabular}%
 }
 \end{table}
 
-
-To isolate the effect of streaming constraints, Figure~\ref{fig:delta-wer}
-plots $\Delta$WER (streaming minus offline) under the fixed-latency setup.
-This view highlights which model families are more robust to streaming constraints
-for each dataset.
-
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.75\linewidth]{figures/fig_delta_wer_heatmap.png}
-\caption{Accuracy degradation ($\Delta$WER) under fixed latency (4000\,ms chunk, 200\,ms overlap, 0\,ms look-ahead).}
-\label{fig:delta-wer}
+\includegraphics[width=\linewidth]{figures/fig_robustness_abs_rel_4000.png}
+\caption{Robustness comparison at 4000\,ms profile: absolute and relative shifts from VIVOS.}
+\label{fig:robustness-abs-rel}
 \end{figure}
 
-Based on the observed fixed-latency results, we derive deployment-oriented insights.
-ChunkFormer generally provides stronger streaming robustness on VIVOS, Viet YouTube ASR v2, and Speech-MASSIVE\_vie,
-while both ChunkFormer and wav2vec2 show severe degradation on VLSP2020 in streaming simulation.
+Based on the observed latency-sweep results, we derive deployment-oriented insights.
+ChunkFormer consistently outperforms wav2vec2 across all datasets and all three latency profiles, but both models degrade substantially on VLSP2020.
 These findings highlight that offline rankings are insufficient for deployment decisions,
-and fixed-latency streaming evaluation should be reported alongside offline WER.
+and latency-profile-aware streaming evaluation should be reported alongside offline WER.
 
 \section{Conclusion and Future Work}
 
 This paper presents a system-oriented benchmark for Vietnamese streaming ASR that moves beyond offline accuracy-centric evaluation.
 By introducing a unified and reproducible evaluation pipeline, we systematically assess ASR models under realistic streaming constraints
-and report recognition accuracy and runtime efficiency under a fixed deployment-oriented streaming setup.
+and report recognition accuracy and runtime efficiency under deployment-oriented latency profiles.
 Our results demonstrate that model selection based solely on offline WER can be misleading in deployment scenarios,
 as streaming constraints and runtime cost substantially alter the relative performance of different model families.
 
-Through fixed-latency comparisons of WER, $\Delta$WER, and RTF, we highlight model configurations that provide favorable accuracy--efficiency behavior for deployment.
+Through latency-profile comparisons of WER, $\Delta$WER, and RTF, we highlight model configurations that provide favorable accuracy--efficiency behavior for deployment.
 In addition, the proposed robustness scorecard reveals that streaming constraints often amplify performance degradation under distribution shifts,
 including spontaneous speech and in-the-wild conditions that are common in Vietnamese applications.
-The Vietnamese-specific error analysis further exposes systematic failure patterns related to numerals, abbreviations, named entities,
-and code-switching, offering actionable insights for deployment-oriented improvement beyond aggregate metrics.
+Our preliminary Vietnamese-specific error taxonomy (numerals, abbreviations, named entities, and code-switching) exposes likely failure patterns and motivates future quantitative error breakdown.
 
 This work focuses on evaluation rather than model training, and several limitations remain.
 We do not retrain or fine-tune models under streaming constraints, and robustness analysis is limited to a fixed set of datasets and stress conditions.
-Most importantly, this paper does not perform latency sweep experiments; therefore, we do not claim a full latency--accuracy frontier.
+Although we evaluate three practical latency profiles (1200/2400/4000\,ms), we do not claim an exhaustive continuous latency--accuracy frontier.
+RTF results are measured on a single H100 80GB setup and should be interpreted as throughput upper bounds rather than edge-deployment guarantees.
 Future work may extend this benchmark by incorporating additional streaming architectures, low-resource adaptation techniques,
 explicit latency-budget sweeps, and more fine-grained latency measurements that account for end-to-end system effects.
 We also plan to expand the robustness analysis to cover a broader range of acoustic and linguistic variations,

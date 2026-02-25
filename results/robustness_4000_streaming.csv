@@ -1,0 +1,9 @@
+model_key,model,dataset_key,dataset,wer_4000_pct,abs_delta_pp,rel_delta_pct
+chunkformer_ctc_large_vie,ChunkFormer-CTC-large,speech_massive_vie_300,Speech-MASSIVE_vie,21.381451299961192,15.207485363221544,246.31631465158875
+chunkformer_ctc_large_vie,ChunkFormer-CTC-large,vivos_300,VIVOS,6.173965936739649,0.0,0.0
+chunkformer_ctc_large_vie,ChunkFormer-CTC-large,vlsp2020_300,VLSP2020,50.637972099353526,44.46400616261388,720.1854791264763
+chunkformer_ctc_large_vie,ChunkFormer-CTC-large,viet_youtube_asr_v2_300,Viet YouTube ASR v2,5.43917677324513,-0.7347891634945194,-11.901412657980215
+wav2vec2_base_vn_250h,wav2vec2-base-vi,speech_massive_vie_300,Speech-MASSIVE_vie,30.38416763678696,18.06664938861178,146.674427629026
+wav2vec2_base_vn_250h,wav2vec2-base-vi,vivos_300,VIVOS,12.31751824817518,0.0,0.0
+wav2vec2_base_vn_250h,wav2vec2-base-vi,vlsp2020_300,VLSP2020,52.739026879891114,40.42150863171594,328.1627663730421
+wav2vec2_base_vn_250h,wav2vec2-base-vi,viet_youtube_asr_v2_300,Viet YouTube ASR v2,8.30576993752297,-4.0117483106522105,-32.56945295166536

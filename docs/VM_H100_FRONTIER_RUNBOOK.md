@@ -217,6 +217,36 @@ print("Wrote results/frontier_merged.csv:", len(merged), "rows")
 PY
 ```
 
+## 9.1) Tao bo hinh cho paper (khuyen nghi)
+
+```bash
+poetry run python scripts/plot_submission_figures.py \
+  --frontier_csv results/frontier_new_raw.csv \
+  --baseline_csv results/15_00.csv \
+  --out_merged_csv results/frontier_merged.csv \
+  --out_robust_csv results/robustness_4000_streaming.csv \
+  --fig_dir report/figures
+```
+
+Se tao cac file chinh:
+- `results/frontier_merged.csv`
+- `results/robustness_4000_streaming.csv`
+- `report/figures/fig_frontier_wer_latency.png`
+- `report/figures/fig_frontier_delta_latency.png`
+- `report/figures/fig_stability_change_rate_heatmap.png`
+- `report/figures/fig_robustness_abs_rel_4000.png`
+
+## 9.2) (Tuy chon) Paired bootstrap p-value cho DeltaWER
+
+Can `hypotheses.jsonl` trong `runs/<run_id>/`.
+
+```bash
+poetry run python scripts/paired_bootstrap_delta.py \
+  --runs_dir runs \
+  --out_csv results/delta_significance.csv \
+  --n_samples 2000
+```
+
 ## 10) Copy ket qua ve may local
 
 Tu may local:
