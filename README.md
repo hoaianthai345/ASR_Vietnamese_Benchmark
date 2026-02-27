@@ -38,6 +38,56 @@ poetry run vnasrbench --config configs/default.yaml
 make aggregate
 ```
 
+## Final Submission Workflow (Paper)
+
+Use this flow before pushing the final conference package.
+
+### 1) Regenerate merged tables + figures used in `report/main.tex`
+
+```bash
+poetry run python scripts/plot_submission_figures.py \
+  --frontier_csv results/frontier_new_raw.csv \
+  --baseline_csv results/15_00.csv \
+  --significance_csv results/delta_significance.csv \
+  --out_merged_csv results/frontier_merged.csv \
+  --out_robust_csv results/robustness_4000_streaming.csv \
+  --fig_dir report/figures
+```
+
+### 2) Compile paper locally (optional sanity check)
+
+```bash
+cd report
+latexmk -pdf -interaction=nonstopmode main.tex
+cd ..
+```
+
+### 3) Keep only final artifacts in git
+
+Required final artifacts:
+- `report/main.tex`
+- `report/figures/fig_*.png` (figures referenced by `main.tex`)
+- `results/frontier_new_raw.csv`
+- `results/frontier_merged.csv`
+- `results/robustness_4000_streaming.csv`
+- `results/delta_significance.csv`
+- `scripts/plot_submission_figures.py`
+
+The repo ignores LaTeX build artifacts (`aux`, `log`, `fdb_latexmk`, `synctex`, `pdf`) so `git status` stays clean.
+
+### 4) Final pre-push checks
+
+```bash
+git status --short
+poetry run pytest -q
+```
+
+If tests are too heavy on your machine, run at least:
+
+```bash
+poetry run pytest tests -q
+```
+
 ## Avoid Large Files In Git (HF Cache)
 
 Do not place Hugging Face cache inside the repository. Keep cache under `$HOME`:

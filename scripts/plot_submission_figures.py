@@ -336,10 +336,95 @@ def _plot_tradeoff_scatter(df: pd.DataFrame, out_path: Path) -> None:
     plt.close(fig)
 
 
+def _plot_delta_significance(sig: pd.DataFrame, out_path: Path) -> None:
+    df = sig.copy()
+    df = df[df["run_id"].astype(str).str.contains("_300__") & df["run_id"].astype(str).str.contains("__stream")]
+    if df.empty:
+        return
+
+    parts = df["run_id"].astype(str).str.split("__", expand=True)
+    df["dataset_key"] = parts[0]
+    df["model_key"] = parts[1]
+    df = df[
+        df["dataset_key"].isin(DATASET_LABELS.keys()) & df["model_key"].isin(MODEL_LABELS.keys())
+    ].copy()
+    if df.empty:
+        return
+
+    df["dataset"] = df["dataset_key"].map(DATASET_LABELS)
+    df["model"] = df["model_key"].map(MODEL_LABELS)
+    df["label"] = df["dataset"] + " | " + df["model"]
+    df["delta_pp"] = df["delta_wer_obs"].astype(float) * 100.0
+    df["ci_low_pp"] = df["delta_wer_ci_low"].astype(float) * 100.0
+    df["ci_high_pp"] = df["delta_wer_ci_high"].astype(float) * 100.0
+    df["p"] = df["p_nonpositive"].astype(float)
+    df["significant"] = df["p"] < 0.05
+
+    d_order = {k: i for i, k in enumerate(DATASET_LABELS.keys())}
+    m_order = {k: i for i, k in enumerate(MODEL_LABELS.keys())}
+    df["_do"] = df["dataset_key"].map(d_order)
+    df["_mo"] = df["model_key"].map(m_order)
+    df = df.sort_values(["_do", "_mo"]).reset_index(drop=True)
+
+    y = np.arange(len(df))
+    colors = np.where(df["significant"], "#1b9e77", "#d95f02")
+
+    fig, (ax_l, ax_r) = plt.subplots(
+        1,
+        2,
+        figsize=(12, 4.8),
+        sharey=True,
+        gridspec_kw={"width_ratios": [2.2, 1.0]},
+    )
+
+    x = df["delta_pp"].to_numpy()
+    xerr = np.vstack([x - df["ci_low_pp"].to_numpy(), df["ci_high_pp"].to_numpy() - x])
+    for i in range(len(df)):
+        ax_l.errorbar(
+            x[i],
+            y[i],
+            xerr=np.array([[xerr[0, i]], [xerr[1, i]]]),
+            fmt="o",
+            color=colors[i],
+            ecolor=colors[i],
+            elinewidth=2,
+            capsize=3,
+            markersize=6,
+        )
+    ax_l.axvline(0.0, color="black", linewidth=1.0, alpha=0.8)
+    ax_l.set_yticks(y)
+    ax_l.set_yticklabels(df["label"].tolist(), fontsize=9)
+    ax_l.invert_yaxis()
+    ax_l.set_xlabel("Delta WER (pp)")
+    ax_l.set_title("Delta WER with 95% CI")
+    ax_l.grid(True, axis="x", alpha=0.3)
+
+    ax_r.barh(y, df["p"].to_numpy(), color=colors, alpha=0.85)
+    ax_r.axvline(0.05, color="black", linestyle="--", linewidth=1.2, label="p=0.05")
+    ax_r.set_xlabel("One-sided p-value")
+    ax_r.set_title("Paired Bootstrap p-value")
+    ax_r.grid(True, axis="x", alpha=0.3)
+    # Reserve right margin so the largest p-value label is never clipped.
+    xmax = max(0.1, float(df["p"].max()) * 1.45)
+    ax_r.set_xlim(0, xmax)
+    for i, p in enumerate(df["p"].to_numpy()):
+        tx = min(p + xmax * 0.02, xmax * 0.97)
+        ax_r.text(tx, y[i], f"{p:.3f}", va="center", ha="left", fontsize=8, clip_on=False)
+
+    sig_handle = plt.Line2D([0], [0], marker="o", color="w", markerfacecolor="#1b9e77", label="p < 0.05", markersize=7)
+    ns_handle = plt.Line2D([0], [0], marker="o", color="w", markerfacecolor="#d95f02", label="p >= 0.05", markersize=7)
+    fig.legend(handles=[sig_handle, ns_handle], loc="upper center", ncol=2, frameon=False, bbox_to_anchor=(0.5, 0.98))
+    fig.suptitle("Statistical Significance of Streaming Degradation", y=1.02, fontsize=14)
+    fig.subplots_adjust(left=0.28, right=0.98, top=0.80, bottom=0.12, wspace=0.12)
+    fig.savefig(out_path, dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--frontier_csv", default="results/frontier_new_raw.csv")
     ap.add_argument("--baseline_csv", default="results/15_00.csv")
+    ap.add_argument("--significance_csv", default="results/delta_significance.csv")
     ap.add_argument("--out_merged_csv", default="results/frontier_merged.csv")
     ap.add_argument("--out_robust_csv", default="results/robustness_4000_streaming.csv")
     ap.add_argument("--fig_dir", default="report/figures")
@@ -347,6 +432,7 @@ def main() -> None:
 
     frontier_csv = Path(args.frontier_csv)
     baseline_csv = Path(args.baseline_csv)
+    significance_csv = Path(args.significance_csv)
     out_merged_csv = Path(args.out_merged_csv)
     out_robust_csv = Path(args.out_robust_csv)
     fig_dir = Path(args.fig_dir)
@@ -370,6 +456,16 @@ def main() -> None:
     robust.to_csv(out_robust_csv, index=False)
     print(f"Wrote: {out_robust_csv} ({len(robust)} rows)")
     _plot_robustness_abs_rel(robust, fig_dir / "fig_robustness_abs_rel_4000.png")
+
+    if significance_csv.exists():
+        sig_df = pd.read_csv(significance_csv)
+        if len(sig_df) > 0:
+            _plot_delta_significance(sig_df, fig_dir / "fig_delta_significance.png")
+            print(f"Wrote: {fig_dir / 'fig_delta_significance.png'}")
+        else:
+            print(f"Skip significance figure: empty {significance_csv}")
+    else:
+        print(f"Skip significance figure: missing {significance_csv}")
 
     print(f"Wrote: {fig_dir / 'fig_frontier_wer_latency.png'}")
     print(f"Wrote: {fig_dir / 'fig_frontier_delta_latency.png'}")
